@@ -1,6 +1,6 @@
 #!/bin/bash
 # install.sh — Sets up the Zoom Scheduler as a macOS launchd job
-# Runs every Friday at 9:58am via launchd
+# Schedule is read from config.json (schedule.hour / schedule.minute / schedule.dayOfWeek)
 
 set -e
 
@@ -9,6 +9,11 @@ PLIST_NAME="com.honghuynh.zoom-scheduler"
 PLIST_PATH="$HOME/Library/LaunchAgents/${PLIST_NAME}.plist"
 NODE_PATH="$(which node)"
 LOG_DIR="$SCRIPT_DIR"
+CONFIG_PATH="$SCRIPT_DIR/config.json"
+
+HOUR=$("$NODE_PATH" -e "console.log(require('$CONFIG_PATH').schedule.hour)")
+MINUTE=$("$NODE_PATH" -e "console.log(require('$CONFIG_PATH').schedule.minute)")
+WEEKDAY=$("$NODE_PATH" -e "console.log(require('$CONFIG_PATH').schedule.dayOfWeek)")
 
 echo "📦 Zoom Scheduler Installer"
 echo "Script dir : $SCRIPT_DIR"
@@ -38,11 +43,11 @@ cat > "$PLIST_PATH" <<EOF
   <key>StartCalendarInterval</key>
   <dict>
     <key>Weekday</key>
-    <integer>5</integer>
+    <integer>${WEEKDAY}</integer>
     <key>Hour</key>
-    <integer>9</integer>
+    <integer>${HOUR}</integer>
     <key>Minute</key>
-    <integer>58</integer>
+    <integer>${MINUTE}</integer>
   </dict>
 
   <key>StandardOutPath</key>
@@ -67,6 +72,6 @@ launchctl load "$PLIST_PATH"
 echo "✅ LaunchAgent loaded"
 
 echo ""
-echo "🎉 Done! The Zoom scheduler will run every Friday at 9:58am."
+echo "🎉 Done! The Zoom scheduler will run every Friday at ${HOUR}:$(printf '%02d' $MINUTE)am."
 echo "   To toggle on/off: node $SCRIPT_DIR/toggle.js [on|off|status]"
 echo "   To uninstall:     launchctl unload $PLIST_PATH && rm $PLIST_PATH"
