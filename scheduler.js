@@ -86,10 +86,11 @@ function main() {
   }
 
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun, 5=Fri
+  const dayOfWeek = now.getDay();
 
-  if (dayOfWeek !== config.schedule.dayOfWeek) {
-    log(`Today is not Friday (day=${dayOfWeek}). Skipping.`);
+  const schedules = Array.isArray(config.schedule) ? config.schedule : [config.schedule];
+  if (!schedules.some((s) => s.dayOfWeek === dayOfWeek)) {
+    log(`Today (day=${dayOfWeek}) is not a scheduled day. Skipping.`);
     return;
   }
 

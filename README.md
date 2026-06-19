@@ -1,6 +1,6 @@
 # Zoom Scheduler
 
-Automatically opens a Zoom meeting every **Friday at 9:58am**, skipping German public holidays for **Hessen (HE)**.
+Automatically opens a Zoom meeting on a configurable schedule, skipping German public holidays for **Hessen (HE)**. The day and time are set in `config.json` — re-run `install.sh` after any change to apply it.
 
 ## Files
 
@@ -40,16 +40,19 @@ node toggle.js status  # check current state
 {
   "enabled": true,
   "zoomUrl": "https://zoom.us/start/videomeeting",
-  "schedule": {
-    "dayOfWeek": 5,
-    "hour": 9,
-    "minute": 58
-  },
+  "schedule": [
+    { "dayOfWeek": 1, "hour": 9, "minute": 0 },
+    { "dayOfWeek": 5, "hour": 10, "minute": 13 }
+  ],
   "state": "HE"
 }
 ```
 
 - **`zoomUrl`**: Replace with your personal Zoom meeting URL (e.g. `https://zoom.us/j/YOUR_MEETING_ID`)
+- **`schedule`**: Array of one or more entries — add as many day/time combinations as needed
+  - **`dayOfWeek`**: `0` = Sunday, `1` = Monday, `2` = Tuesday, `3` = Wednesday, `4` = Thursday, `5` = Friday, `6` = Saturday
+  - **`hour`** / **`minute`**: 24-hour time
+- Re-run `install.sh` after any schedule change to apply it
 - **`state`**: German federal state for holiday calculation (currently `HE` = Hessen)
 
 ## Logs

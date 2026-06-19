@@ -11,9 +11,28 @@ NODE_PATH="$(which node)"
 LOG_DIR="$SCRIPT_DIR"
 CONFIG_PATH="$SCRIPT_DIR/config.json"
 
-HOUR=$("$NODE_PATH" -e "console.log(require('$CONFIG_PATH').schedule.hour)")
-MINUTE=$("$NODE_PATH" -e "console.log(require('$CONFIG_PATH').schedule.minute)")
-WEEKDAY=$("$NODE_PATH" -e "console.log(require('$CONFIG_PATH').schedule.dayOfWeek)")
+INTERVAL_XML=$("$NODE_PATH" -e "
+const cfg = require('$CONFIG_PATH');
+const schedules = Array.isArray(cfg.schedule) ? cfg.schedule : [cfg.schedule];
+const dict = s =>
+  '  <dict>\n' +
+  '    <key>Weekday</key>\n    <integer>' + s.dayOfWeek + '</integer>\n' +
+  '    <key>Hour</key>\n    <integer>' + s.hour + '</integer>\n' +
+  '    <key>Minute</key>\n    <integer>' + s.minute + '</integer>\n' +
+  '  </dict>';
+if (schedules.length === 1) {
+  process.stdout.write(dict(schedules[0]));
+} else {
+  process.stdout.write('  <array>\n' + schedules.map(dict).join('\n') + '\n  </array>');
+}
+")
+
+SCHEDULE_SUMMARY=$("$NODE_PATH" -e "
+const cfg = require('$CONFIG_PATH');
+const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const schedules = Array.isArray(cfg.schedule) ? cfg.schedule : [cfg.schedule];
+console.log(schedules.map(s => days[s.dayOfWeek] + ' at ' + s.hour + ':' + String(s.minute).padStart(2,'0')).join(', '));
+")
 
 echo "📦 Zoom Scheduler Installer"
 echo "Script dir : $SCRIPT_DIR"
@@ -41,14 +60,7 @@ cat > "$PLIST_PATH" <<EOF
   </array>
 
   <key>StartCalendarInterval</key>
-  <dict>
-    <key>Weekday</key>
-    <integer>${WEEKDAY}</integer>
-    <key>Hour</key>
-    <integer>${HOUR}</integer>
-    <key>Minute</key>
-    <integer>${MINUTE}</integer>
-  </dict>
+${INTERVAL_XML}
 
   <key>StandardOutPath</key>
   <string>${LOG_DIR}/scheduler.log</string>
@@ -72,6 +84,6 @@ launchctl load "$PLIST_PATH"
 echo "✅ LaunchAgent loaded"
 
 echo ""
-echo "🎉 Done! The Zoom scheduler will run every Friday at ${HOUR}:$(printf '%02d' $MINUTE)am."
+echo "🎉 Done! The Zoom scheduler will run: ${SCHEDULE_SUMMARY}."
 echo "   To toggle on/off: node $SCRIPT_DIR/toggle.js [on|off|status]"
 echo "   To uninstall:     launchctl unload $PLIST_PATH && rm $PLIST_PATH"
